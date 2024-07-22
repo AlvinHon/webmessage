@@ -14,7 +14,7 @@ wasm-pack build --target web
 
 The resulting package is saved into folder `/pkg` after successful build.
 
-## Example - Use in Web app (javascipt)
+## Example - Use in Web app (javaScript)
 
 In this example, the built package (i.e. files in the folder `/pkg`) is copied into the folder `webmessage` in the web app source folder.
 
