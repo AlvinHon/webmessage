@@ -64,18 +64,13 @@ pub fn signMessage(group_id: &str, data: &str) -> String {
 /// Adds a signed message to the store for the given group ID. It returns the hash of the message.
 #[allow(non_snake_case)]
 #[wasm_bindgen]
-pub fn addSignedMessage(group_id: &str, signed_msg_str: &str) -> String {
+pub fn addSignedMessage(group_id: &str, signed_msg_str: &str) -> Result<String, String> {
     let mut msg_store = SignedMessageStore {};
 
-    let signed_msg = match serde_json::from_str(signed_msg_str) {
-        Ok(msg) => msg,
-        Err(_) => return "".to_string(),
-    };
+    let signed_msg =
+        serde_json::from_str(signed_msg_str).map_err(|_| "Fail to parse".to_string())?;
 
-    let hash = match msg_store.add_message::<Hasher>(group_id, &signed_msg) {
-        Some(hash) => hash,
-        None => return "".to_string(),
-    };
+    let hash = msg_store.add_message::<Hasher>(group_id, &signed_msg)?;
 
-    serde_json::to_string(&hash).unwrap()
+    Ok(serde_json::to_string(&hash).unwrap())
 }

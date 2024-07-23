@@ -50,20 +50,26 @@ impl SignedMessageStore {
         &mut self,
         group_id: &str,
         message: &SignedMessage<Identity, Signature>,
-    ) -> Option<MessageHash> {
+    ) -> Result<MessageHash, String> {
         // validate message signature
-        message.validate::<H>().then_some(())?;
+        if !message.validate::<H>() {
+            return Err("fail to validate message".to_string());
+        }
 
         // validate sequence and previous hash
-        let (latest_hash, latest_seq) = self
+        let (expect_prev_hash, expect_seq) = self
             .latest_message(group_id)
-            .map(|(hash, msg)| (hash, msg.seq))
+            .map(|(hash, msg)| (hash, msg.seq + 1))
             .unwrap_or(([0u8; 32], 0));
 
-        (message.seq != latest_seq + 1).then_some(())?;
-        (message.message.previous_hash != latest_hash).then_some(())?;
+        if message.seq != expect_seq {
+            return Err("wrong message sequence".to_string());
+        }
+        if message.message.previous_hash != expect_prev_hash {
+            return Err("wrong previous hash".to_string());
+        }
 
-        Some(self.save_message::<H>(group_id, message))
+        Ok(self.save_message::<H>(group_id, message))
     }
 
     /// Saves a message to the store. It returns the hash of the message.

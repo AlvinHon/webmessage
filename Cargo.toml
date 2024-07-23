@@ -1,6 +1,6 @@
 [package]
 name = "webmessage"
-version = "0.1.0"
+version = "0.1.1"
 description = "Rust-Wasm library that stores a sequence of messages in browser's local storage with hashing and signatures."
 authors = ["alvin.cpp@gmail.com"]
 license = "Apache-2.0"
