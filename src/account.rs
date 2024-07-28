@@ -30,6 +30,16 @@ impl Display for Identity {
         write!(f, "{}", self.public_key)
     }
 }
+
+impl TryFrom<&str> for Identity {
+    type Error = ();
+    fn try_from(value: &str) -> Result<Self, Self::Error> {
+        Ok(Self {
+            public_key: value.to_string(),
+        })
+    }
+}
+
 impl PartialEq for Identity {
     fn eq(&self, other: &Self) -> bool {
         self.public_key == other.public_key
@@ -72,6 +82,7 @@ impl Display for Secret {
 }
 
 /// GenKeysAlgorithm is a wrapper around schnorr_rs::SignatureSchemeECP256<Hasher>, which implements the trait [GenerateKeys](crate::core::account::GenerateKeys).
+#[derive(Default)]
 pub struct GenKeysAlgorithm;
 impl GenerateKeys<Secret, Identity> for GenKeysAlgorithm {
     fn generate_keys() -> (Secret, Identity) {

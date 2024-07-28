@@ -3,6 +3,7 @@
 use serde::{de::DeserializeOwned, Serialize};
 
 pub(crate) mod account;
+pub(crate) mod group;
 pub(crate) mod message;
 
 /// SerdeLocalStore is a trait that provides methods to get and set values from local storage.

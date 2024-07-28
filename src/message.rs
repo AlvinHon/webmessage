@@ -2,7 +2,7 @@
 
 use crate::{
     account::{Identity, Secret},
-    core::message::{Message, MessageHash, MessageHasher, MessageSignature, SignedMessage},
+    core::message::{Message, MessageHash, MessageHasher, MessageSignature},
 };
 
 use sha2::{Digest, Sha256};
@@ -56,7 +56,7 @@ impl MessageSignature<Identity> for Signature {
 }
 
 /// Implements the trait [MessageSigner](crate::core::message::MessageSigner) using the Schnorr signature scheme.
-pub(crate) struct MessageSigner {}
+pub struct MessageSigner {}
 impl crate::core::message::MessageSigner<Identity, Secret, Signature> for MessageSigner {
     fn sign(id: &Identity, secret: &Secret, message: &Message) -> Signature {
         let public_key = &id.to_public_key();
@@ -70,30 +70,4 @@ impl crate::core::message::MessageSigner<Identity, Secret, Signature> for Messag
         );
         Signature::new(signature)
     }
-}
-
-/// Creates a new first message with the given data and signs it using the Schnorr signature scheme.
-pub(crate) fn new_first_message(
-    identity: Identity,
-    secret: &Secret,
-    data: Vec<u8>,
-) -> SignedMessage<Identity, Signature> {
-    SignedMessage::new_first_message::<Secret, MessageSigner>(identity, secret, data)
-}
-
-/// Creates a new message from the previous message with the given data and signs it using the Schnorr signature scheme.
-pub(crate) fn new_from_previous_message(
-    identity: Identity,
-    secret: &Secret,
-    data: Vec<u8>,
-    hash: MessageHash,
-    signed_message: SignedMessage<Identity, Signature>,
-) -> SignedMessage<Identity, Signature> {
-    SignedMessage::new_from_previous_message::<Secret, MessageSigner>(
-        identity,
-        secret,
-        data,
-        hash,
-        signed_message,
-    )
 }

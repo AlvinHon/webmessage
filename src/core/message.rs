@@ -8,22 +8,22 @@ use super::account::{Identity, Secret};
 pub type MessageHash = [u8; 32];
 
 /// MessageSignature is a trait that represents a signature of a message.
-pub(crate) trait MessageSignature<I: Identity>: AsRef<[u8]> {
+pub trait MessageSignature<I: Identity>: AsRef<[u8]> {
     fn verify(&self, id: &I, message: &[u8]) -> bool;
 }
 
 /// Implements the hash function for messages.
-pub(crate) trait MessageHasher {
+pub trait MessageHasher {
     fn hash<T: AsRef<[u8]>>(value: T) -> MessageHash;
 }
 
 /// Message is a struct that represents a message.
 #[derive(Clone, Serialize, Deserialize)]
-pub(crate) struct Message {
+pub struct Message {
     /// previous_hash is the hash of the previous message.
-    pub(crate) previous_hash: MessageHash,
+    pub previous_hash: MessageHash,
     /// data is the data of the message.
-    pub(crate) data: Vec<u8>,
+    pub data: Vec<u8>,
 }
 
 impl Message {
@@ -41,21 +41,21 @@ impl Message {
     }
 }
 
-pub(crate) trait MessageSigner<I: Identity, K: Secret, S: MessageSignature<I>> {
+pub trait MessageSigner<I: Identity, K: Secret, S: MessageSignature<I>> {
     fn sign(id: &I, secret: &K, message: &Message) -> S;
 }
 
 /// SignedMessage is a struct that represents a signed message.
 #[derive(Clone, Serialize, Deserialize)]
-pub(crate) struct SignedMessage<I: Identity, S: MessageSignature<I>> {
+pub struct SignedMessage<I: Identity, S: MessageSignature<I>> {
     /// message to be signed.
-    pub(crate) message: Message,
+    pub message: Message,
     /// the identity of the signer.
-    pub(crate) id: I,
+    pub id: I,
     /// the sequence number in the chain.
-    pub(crate) seq: u32,
+    pub seq: u32,
     /// the signature of the message.
-    pub(crate) signature: S,
+    pub signature: S,
 }
 
 impl<I, S> SignedMessage<I, S>
@@ -64,7 +64,7 @@ where
     S: MessageSignature<I>,
 {
     /// Creates a new first message with the given data and signs it.
-    pub(crate) fn new_first_message<K: Secret, A: MessageSigner<I, K, S>>(
+    pub fn new_first_message<K: Secret, A: MessageSigner<I, K, S>>(
         id: I,
         secret: &K,
         data: Vec<u8>,
@@ -80,7 +80,7 @@ where
     }
 
     /// Creates a new message from the previous message with the given data and signs it.
-    pub(crate) fn new_from_previous_message<K: Secret, A: MessageSigner<I, K, S>>(
+    pub fn new_from_previous_message<K: Secret, A: MessageSigner<I, K, S>>(
         id: I,
         secret: &K,
         data: Vec<u8>,
@@ -100,15 +100,15 @@ where
         }
     }
 
-    /// validate checks if the signature of the message is valid.
-    pub(crate) fn validate<H: MessageHasher>(&self) -> bool {
+    /// verifies if the signature of the message is valid.
+    pub fn verify<H: MessageHasher>(&self) -> bool {
         self.signature
             .verify(&self.id, &self.message.to_hash::<H>())
     }
 
     /// hash returns the hash of the signed message.
     /// The hash is calculated by hashing the data of the message, the id, the sequence number, and the signature.
-    pub(crate) fn hash<H: MessageHasher>(&self) -> MessageHash {
+    pub fn hash<H: MessageHasher>(&self) -> MessageHash {
         H::hash(
             [
                 &self.message.data,
@@ -118,5 +118,18 @@ where
             ]
             .concat(),
         )
+    }
+
+    /// Checks if the message is a valid parent of the other message. It checks the conditions such as
+    /// the hash of the message, the sequence number, and the signature validation of other message.
+    pub fn is_valid_parent_of<H: MessageHasher>(&self, other: &Self) -> bool {
+        self.hash::<H>() == other.message.previous_hash
+            && self.seq + 1 == other.seq
+            && other.verify::<H>()
+    }
+
+    /// Checks if the message is the first message.
+    pub fn is_first_message(&self) -> bool {
+        self.seq == 0 && self.message.previous_hash == [0u8; 32]
     }
 }

@@ -12,6 +12,7 @@ const KEY_MESSAGE: &str = "msg";
 const KEY_LATEST_MESSAGEHASH: &str = "latest_msghash";
 
 /// SignedMessageStore is a store for signed messages. It implements the trait [SerdeLocalStore](crate::store::SerdeLocalStore).
+#[derive(Default)]
 pub(crate) struct SignedMessageStore {}
 
 impl SignedMessageStore {
@@ -36,40 +37,6 @@ impl SignedMessageStore {
     /// Returns the latest message hash for the given group ID.
     pub(crate) fn latest_message_hash(&self, group_id: &str) -> Option<MessageHash> {
         self.get(format!("{KEY_LATEST_MESSAGEHASH}_{group_id}",).as_str())
-    }
-
-    /// Adds a message to the store. It returns the hash of the message if the message is valid.
-    ///
-    /// The steps involved:
-    /// 1. Validate the message signature.
-    /// 2. Validate the sequence number and the previous hash.
-    /// 3. Save the message.
-    /// 4. Update the latest message hash.
-    /// 5. Return the hash of the message.
-    pub(crate) fn add_message<H: MessageHasher>(
-        &mut self,
-        group_id: &str,
-        message: &SignedMessage<Identity, Signature>,
-    ) -> Result<MessageHash, String> {
-        // validate message signature
-        if !message.validate::<H>() {
-            return Err("fail to validate message".to_string());
-        }
-
-        // validate sequence and previous hash
-        let (expect_prev_hash, expect_seq) = self
-            .latest_message(group_id)
-            .map(|(hash, msg)| (hash, msg.seq + 1))
-            .unwrap_or(([0u8; 32], 0));
-
-        if message.seq != expect_seq {
-            return Err("wrong message sequence".to_string());
-        }
-        if message.message.previous_hash != expect_prev_hash {
-            return Err("wrong previous hash".to_string());
-        }
-
-        Ok(self.save_message::<H>(group_id, message))
     }
 
     /// Saves a message to the store. It returns the hash of the message.
@@ -111,25 +78,24 @@ impl SignedMessageStore {
 
     /// Validates the stored messages for the given group ID.
     pub(crate) fn validate_messages<H: MessageHasher>(&self, group_id: &str) -> bool {
-        let (mut latest_hash, latest_msg) = match self.latest_message(group_id) {
-            Some(m) => m,
+        let mut latest_msg = match self.latest_message(group_id) {
+            Some((_, m)) => m,
             None => return true,
         };
-        let mut seq = latest_msg.seq;
 
-        while let Some(message) = self.message(group_id, &latest_hash) {
-            if message.seq != seq || message.hash::<H>() != latest_hash {
-                return false;
-            }
-            if !message.validate::<H>() {
-                return false;
-            }
-            latest_hash = message.message.previous_hash;
-
-            seq = seq.saturating_sub(1);
+        if !latest_msg.verify::<H>() {
+            return false;
         }
 
-        latest_hash == [0u8; 32] && seq == 0
+        while let Some(message) = self.message(group_id, &latest_msg.message.previous_hash) {
+            if !message.is_valid_parent_of::<H>(&latest_msg) {
+                return false;
+            }
+
+            latest_msg = message.clone();
+        }
+
+        latest_msg.is_first_message()
     }
 
     fn set_message(

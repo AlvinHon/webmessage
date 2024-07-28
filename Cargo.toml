@@ -1,6 +1,6 @@
 [package]
 name = "webmessage"
-version = "0.1.1"
+version = "0.1.2"
 description = "Rust-Wasm library that stores a sequence of messages in browser's local storage with hashing and signatures."
 authors = ["alvin.cpp@gmail.com"]
 license = "Apache-2.0"
@@ -20,6 +20,7 @@ rand = "0.8.5"
 serde = { version = "1.0.203", features = ["derive"] }
 serde_json = "1.0.120"
 schnorr-rs = "0.1"
+web-time = "=1.1.0"
 
 [dependencies.getrandom]
 version = "*"
@@ -31,3 +32,6 @@ features = [
     'Window',
     'Storage',
 ]
+
+[dev-dependencies]
+wasm-bindgen-test = "0.3.0"

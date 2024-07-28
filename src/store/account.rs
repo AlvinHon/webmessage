@@ -11,6 +11,7 @@ const KEY_ACCOUNT_ID: &str = "accpubk";
 const KEY_ACCOUNT_SECRET: &str = "accprivk";
 
 /// AccountStore is a store for account related data. It implements the trait [SerdeLocalStore](crate::store::SerdeLocalStore).
+#[derive(Default)]
 pub(crate) struct AccountStore {}
 
 impl AccountStore {
