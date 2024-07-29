@@ -1,3 +1,5 @@
+//! Writer module provides a writer struct to write messages to the store.
+
 use crate::{
     account::Identity,
     core::{
@@ -8,6 +10,7 @@ use crate::{
     store::{group::GroupStore, message::SignedMessageStore},
 };
 
+/// Writer is a struct that defines the writing process involved with the stores such as `GroupStore` and `SignedMessageStore`.
 #[derive(Default)]
 pub(crate) struct Writer {
     pub(crate) message_store: SignedMessageStore,
@@ -15,6 +18,8 @@ pub(crate) struct Writer {
 }
 
 impl Writer {
+    /// Writes a signed message to the store. It saves the message to the `SignedMessageStore` an
+    /// adds the group to the `GroupStore`. It returns the message hash and the signed message.
     pub(crate) fn write(
         &mut self,
         group_id: &str,
@@ -29,6 +34,9 @@ impl Writer {
         (msg_hash, signed_msg)
     }
 
+    /// Writes a signed message to the store with validation. It validates the message signature, sequence, and previous hash.
+    /// It saves the message to the `SignedMessageStore` and adds the group to the `GroupStore`.
+    /// It returns the message hash and the signed message if successful, otherwise it returns a validation error message.
     pub(crate) fn write_with_validation(
         &mut self,
         group_id: &str,

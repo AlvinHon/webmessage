@@ -1,12 +1,18 @@
+//! Group struct and its implementation.
+
 use serde::{Deserialize, Serialize};
 
+/// Defines a group for categorizing messages.
 #[derive(Clone, Serialize, Deserialize)]
 pub struct Group {
+    /// Group id uniquely identified
     pub id: String,
-    pub timestamp: u64, // Unix timestamp
+    /// Unix timestamp
+    pub timestamp: u64,
 }
 
 impl Group {
+    /// Create a new Group instance. The timestamp is set to the current time.
     pub(crate) fn new(id: String) -> Self {
         Self {
             id,

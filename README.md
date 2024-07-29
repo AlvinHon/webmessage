@@ -14,6 +14,17 @@ wasm-pack build --target web
 
 The resulting package is saved into folder `/pkg` after successful build.
 
+## Test
+
+The testing follows the guide [rustwasm](https://rustwasm.github.io/docs/wasm-pack/tutorials/npm-browser-packages/testing-your-project.html).
+
+To test, run
+```sh
+wasm-pack test --chrome
+```
+
+Then, open the browser at localhost with pot 8000. The tests will be performed in browser with test results displayed on the webpage.
+
 ## Example - Use in Web app (JavaScript)
 
 In this example, the built package (i.e. files in the folder `/pkg`) is copied into the folder `webmessage` in the web app source folder.

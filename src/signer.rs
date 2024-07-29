@@ -1,3 +1,5 @@
+//! Defines the `Signer` struct and its implementation.
+
 use crate::{
     account::{Identity, Secret},
     core::message::SignedMessage,
@@ -5,6 +7,7 @@ use crate::{
     store::{account::AccountStore, message::SignedMessageStore},
 };
 
+/// Signer is a struct that defines the signing process involved with the stores such as `AccountStore` and `SignedMessageStore`.
 #[derive(Default)]
 pub(crate) struct Signer {
     pub(crate) account_store: AccountStore,
@@ -12,6 +15,9 @@ pub(crate) struct Signer {
 }
 
 impl Signer {
+    /// Signs a message with the given group id and data.
+    /// The message is signed with the secret key from the `AccountStore`.
+    /// Depends on the latest message stored, it signs the message as the first message or a subsequent message.
     pub(crate) fn sign(
         &mut self,
         group_id: &str,
