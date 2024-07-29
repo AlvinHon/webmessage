@@ -180,3 +180,32 @@ fn test_groups() {
     // clear the local storage
     webmessage::clear().expect("it should clear the local storage");
 }
+
+#[wasm_bindgen_test]
+fn test_invalid_message() {
+    initAccount();
+
+    // create a new identity for signing a message
+    let mut msg = {
+        let (other_secret, other_id) = GenKeysAlgorithm::generate_keys();
+        SignedMessage::new_first_message::<Secret, MessageSigner>(
+            other_id.clone(),
+            &other_secret,
+            "other data".as_bytes().to_vec(),
+        )
+    };
+
+    // modify the message
+    msg.message.data = "other data 3".as_bytes().to_vec();
+
+    // add the signed message from the other identity
+    webmessage::addSignedMessage("group1", &serde_json::to_string(&msg).unwrap())
+        .expect_err("invalid signed message");
+
+    assert!(messages("group1").is_empty());
+    assert!(groups().is_empty());
+    assert!(validateMessages("group1"));
+
+    // clear the local storage
+    webmessage::clear().expect("it should clear the local storage");
+}
