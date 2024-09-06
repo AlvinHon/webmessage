@@ -13,6 +13,7 @@ pub mod signer;
 pub mod store;
 pub mod writer;
 
+use account::Identity;
 use store::group::GroupStore;
 use wasm_bindgen::prelude::*;
 
@@ -28,8 +29,37 @@ use crate::{
 #[allow(non_snake_case)]
 #[wasm_bindgen]
 pub fn initAccount() -> Vec<String> {
-    let (public_key, secret_key) = AccountStore::default().init_keys::<GenKeysAlgorithm>();
+    let (public_key, secret_key) = AccountStore::default().initialize::<GenKeysAlgorithm>();
     vec![public_key.to_string(), secret_key.to_string()]
+}
+
+#[allow(non_snake_case)]
+#[wasm_bindgen]
+pub fn allAccounts() -> Vec<String> {
+    AccountStore::default()
+        .accounts()
+        .iter()
+        .map(|(id, _)| id.to_string())
+        .collect()
+}
+
+#[allow(non_snake_case)]
+#[wasm_bindgen]
+pub fn setCurrentAccount(identity: &str) {
+    AccountStore::default().set_current_account(Identity::try_from(identity).unwrap());
+}
+
+#[allow(non_snake_case)]
+#[wasm_bindgen]
+pub fn newAccount() -> Vec<String> {
+    let (public_key, secret_key) = AccountStore::default().new_account::<GenKeysAlgorithm>();
+    vec![public_key.to_string(), secret_key.to_string()]
+}
+
+#[allow(non_snake_case)]
+#[wasm_bindgen]
+pub fn deleteAccount(identity: &str) {
+    AccountStore::default().delete_account(&Identity::try_from(identity).unwrap());
 }
 
 /// Returns the stored messages for the given group ID.

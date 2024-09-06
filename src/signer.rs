@@ -23,8 +23,7 @@ impl Signer {
         group_id: &str,
         data: Vec<u8>,
     ) -> SignedMessage<Identity, Signature> {
-        let identity = self.account_store.public_key().unwrap();
-        let secret = self.account_store.secret_key().unwrap();
+        let (identity, secret) = self.account_store.current_account().unwrap();
 
         match self.message_store.latest_message(group_id) {
             Some((previous_hash, prev_message)) => {

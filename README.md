@@ -90,8 +90,3 @@ The design reasonale is that, the creation of signature indicates the signer's i
 
 Local Storage in browser is size-limited.
 
-There are some improvement to make:
-- support multiple accounts
-- minimize the size of data to store
-- (welcome to add more)
-

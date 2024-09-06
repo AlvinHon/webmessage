@@ -9,6 +9,70 @@ use webmessage::{
 wasm_bindgen_test_configure!(run_in_browser);
 
 #[wasm_bindgen_test]
+fn test_accounts() {
+    // accounts should be empty
+    let accounts = webmessage::allAccounts();
+    assert!(accounts.is_empty());
+
+    // initialize an account
+    let id_and_secret = initAccount();
+    assert_eq!(id_and_secret.len(), 2);
+    let id = Identity::try_from(id_and_secret[0].as_str()).expect("it should parse the identity");
+
+    // accounts should have one account
+    let accounts = webmessage::allAccounts();
+    assert_eq!(accounts.len(), 1);
+    // the account should be the same as the initialized account
+    assert_eq!(accounts[0], id.to_string());
+
+    // add another account
+    let id_and_secret2 = webmessage::newAccount();
+    assert_eq!(id_and_secret2.len(), 2);
+
+    let id2 = Identity::try_from(id_and_secret2[0].as_str()).expect("it should parse the identity");
+
+    // accounts should have two accounts
+    let accounts = webmessage::allAccounts();
+    assert_eq!(accounts.len(), 2);
+    // the accounts should be the same as the initialized accounts
+    assert_eq!(accounts[0], id.to_string());
+    assert_eq!(accounts[1], id2.to_string());
+
+    // check if current account is the newly added account
+    let check_id_and_secret = initAccount();
+    assert_eq!(check_id_and_secret.len(), 2);
+    let check_id =
+        Identity::try_from(check_id_and_secret[0].as_str()).expect("it should parse the identity");
+    assert!(check_id == id2);
+
+    // set the current account to the first account
+    webmessage::setCurrentAccount(&id.to_string());
+    let check_id_and_secret = initAccount();
+    assert_eq!(check_id_and_secret.len(), 2);
+    let check_id =
+        Identity::try_from(check_id_and_secret[0].as_str()).expect("it should parse the identity");
+    assert!(check_id == id);
+
+    // delete the first account
+    webmessage::deleteAccount(&id.to_string());
+    // accounts should have one account
+    let accounts = webmessage::allAccounts();
+    assert_eq!(accounts.len(), 1);
+    // the account should be the same as the second account
+    assert_eq!(accounts[0], id2.to_string());
+
+    // check if current account is the second account
+    let check_id_and_secret = initAccount();
+    assert_eq!(check_id_and_secret.len(), 2);
+    let check_id =
+        Identity::try_from(check_id_and_secret[0].as_str()).expect("it should parse the identity");
+    assert!(check_id == id2);
+
+    // clear the local storage
+    webmessage::clear().expect("it should clear the local storage");
+}
+
+#[wasm_bindgen_test]
 fn test_sign_message() {
     // test initial setup
     let items = initAccount();
