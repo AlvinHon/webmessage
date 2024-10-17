@@ -9,20 +9,16 @@ use sha2::{Digest, Sha256};
 
 use serde::{Deserialize, Serialize};
 
+type SchnorrSignature = schnorr_rs::Signature<schnorr_rs::SchnorrP256Group>;
+
 /// Hasher is a wrapper around sha2::Sha256, which implements the trait [MessageHasher](crate::core::message::MessageHasher).
 pub struct Hasher;
 
 impl MessageHasher for Hasher {
     fn hash<T: AsRef<[u8]>>(value: T) -> MessageHash {
-        <Self as schnorr_rs::Hash>::hash(value).try_into().unwrap()
-    }
-}
-
-impl schnorr_rs::Hash for Hasher {
-    fn hash<T: AsRef<[u8]>>(value: T) -> Vec<u8> {
         let mut hasher = Sha256::new();
         hasher.update(value);
-        hasher.finalize().to_vec()
+        hasher.finalize().try_into().unwrap()
     }
 }
 
@@ -33,7 +29,7 @@ pub struct Signature {
 }
 
 impl Signature {
-    pub fn new(signature: schnorr_rs::ec::Signature) -> Self {
+    pub fn new(signature: SchnorrSignature) -> Self {
         Self {
             signature: serde_json::to_string(&signature).unwrap(),
         }
@@ -48,9 +44,10 @@ impl AsRef<[u8]> for Signature {
 
 impl MessageSignature<Identity> for Signature {
     fn verify(&self, id: &Identity, message: &[u8]) -> bool {
-        let signature: schnorr_rs::ec::Signature = serde_json::from_str(&self.signature).unwrap();
+        let signature: schnorr_rs::Signature<schnorr_rs::SchnorrP256Group> =
+            serde_json::from_str(&self.signature).unwrap();
         let public_key = id.to_public_key();
-        let scheme = schnorr_rs::SignatureSchemeECP256::<Hasher>::new();
+        let scheme = schnorr_rs::signature_scheme_p256::<Sha256>();
         scheme.verify(&public_key, message, &signature)
     }
 }
@@ -61,7 +58,7 @@ impl crate::core::message::MessageSigner<Identity, Secret, Signature> for Messag
     fn sign(id: &Identity, secret: &Secret, message: &Message) -> Signature {
         let public_key = &id.to_public_key();
         let private_key = secret.as_private_key();
-        let scheme = schnorr_rs::SignatureSchemeECP256::<Hasher>::new();
+        let scheme = schnorr_rs::signature_scheme_p256::<Sha256>();
         let signature = scheme.sign(
             &mut rand::thread_rng(),
             private_key,

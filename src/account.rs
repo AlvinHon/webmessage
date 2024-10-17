@@ -3,8 +3,12 @@
 use std::fmt::Display;
 
 use serde::{Deserialize, Serialize};
+use sha2::Sha256;
 
-use crate::{core::account::GenerateKeys, message::Hasher};
+use crate::core::account::GenerateKeys;
+
+type PublicKey = schnorr_rs::PublicKey<schnorr_rs::SchnorrP256Group>;
+type SigningKey = schnorr_rs::SigningKey<schnorr_rs::SchnorrP256Group>;
 
 /// Identity is a wrapper around schnorr_rs::ec::PublicKey, which implements the trait [Identity](crate::core::account::Identity).
 #[derive(Clone, Serialize, Deserialize)]
@@ -13,14 +17,14 @@ pub struct Identity {
 }
 
 impl Identity {
-    pub fn new(public_key: schnorr_rs::ec::PublicKey) -> Self {
+    pub fn new(public_key: PublicKey) -> Self {
         // TODO implement PartialEq, Eq, AsRef<[u8]> for schnorr_rs::ec::PublicKey
         Self {
             public_key: serde_json::to_string(&public_key).unwrap(),
         }
     }
 
-    pub fn to_public_key(&self) -> schnorr_rs::ec::PublicKey {
+    pub fn to_public_key(&self) -> PublicKey {
         serde_json::from_str(&self.public_key).unwrap()
     }
 }
@@ -65,12 +69,12 @@ impl crate::core::account::Identity for Identity {}
 /// Secret is a wrapper around schnorr_rs::ec::SigningKey, which implements the trait [Secret](crate::core::account::Secret).
 #[derive(Clone, Serialize, Deserialize)]
 pub struct Secret {
-    private_key: schnorr_rs::ec::SigningKey,
+    private_key: SigningKey,
 }
 impl crate::core::account::Secret for Secret {}
 
 impl Secret {
-    pub fn as_private_key(&self) -> &schnorr_rs::ec::SigningKey {
+    pub fn as_private_key(&self) -> &SigningKey {
         &self.private_key
     }
 }
@@ -86,7 +90,7 @@ impl Display for Secret {
 pub struct GenKeysAlgorithm;
 impl GenerateKeys<Secret, Identity> for GenKeysAlgorithm {
     fn generate_keys() -> (Secret, Identity) {
-        let scheme = schnorr_rs::SignatureSchemeECP256::<Hasher>::new();
+        let scheme = schnorr_rs::signature_scheme_p256::<Sha256>();
         let (private_key, public_key) = scheme.generate_key(&mut rand::thread_rng());
         let id = Identity::new(public_key);
         (Secret { private_key }, id)
