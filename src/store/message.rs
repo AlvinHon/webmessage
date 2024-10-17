@@ -1,8 +1,10 @@
 //! Provides a struct `SignedMessageStore` for storing signed messages.
 
+use sha2::Digest;
+
 use crate::{
     account::Identity,
-    core::message::{MessageHash, MessageHasher, SignedMessage},
+    core::message::{MessageHash, SignedMessage},
     message::Signature,
 };
 
@@ -46,7 +48,7 @@ impl SignedMessageStore {
     /// 1. Save the message.
     /// 2. Update the latest message hash.
     /// 3. Return the hash of the message.
-    pub(crate) fn save_message<H: MessageHasher>(
+    pub(crate) fn save_message<H: Digest>(
         &mut self,
         group_id: &str,
         message: &SignedMessage<Identity, Signature>,
@@ -77,7 +79,7 @@ impl SignedMessageStore {
     }
 
     /// Validates the stored messages for the given group ID.
-    pub(crate) fn validate_messages<H: MessageHasher>(&self, group_id: &str) -> bool {
+    pub(crate) fn validate_messages<H: Digest>(&self, group_id: &str) -> bool {
         let mut latest_msg = match self.latest_message(group_id) {
             Some((_, m)) => m,
             None => return true,

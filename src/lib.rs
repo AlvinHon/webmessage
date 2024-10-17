@@ -14,12 +14,12 @@ pub mod store;
 pub mod writer;
 
 use account::Identity;
+use sha2::Sha256;
 use store::group::GroupStore;
 use wasm_bindgen::prelude::*;
 
 use crate::{
     account::GenKeysAlgorithm,
-    message::Hasher,
     signer::Signer,
     store::{account::AccountStore, message::SignedMessageStore},
     writer::Writer,
@@ -87,7 +87,7 @@ pub fn groups() -> Vec<String> {
 #[allow(non_snake_case)]
 #[wasm_bindgen]
 pub fn validateMessages(group_id: &str) -> bool {
-    SignedMessageStore::default().validate_messages::<Hasher>(group_id)
+    SignedMessageStore::default().validate_messages::<Sha256>(group_id)
 }
 
 /// Signs a message with the given group ID and data. It returns the signed message.

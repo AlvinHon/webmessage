@@ -1,12 +1,14 @@
 //! Writer module provides a writer struct to write messages to the store.
 
+use sha2::Sha256;
+
 use crate::{
     account::Identity,
     core::{
         group::Group,
         message::{MessageHash, SignedMessage},
     },
-    message::{Hasher, Signature},
+    message::Signature,
     store::{group::GroupStore, message::SignedMessageStore},
 };
 
@@ -27,7 +29,7 @@ impl Writer {
     ) -> (MessageHash, SignedMessage<Identity, Signature>) {
         let msg_hash = self
             .message_store
-            .save_message::<Hasher>(group_id, &signed_msg);
+            .save_message::<Sha256>(group_id, &signed_msg);
 
         self.group_store.add_group(Group::new(group_id.to_string()));
 
@@ -43,7 +45,7 @@ impl Writer {
         message: SignedMessage<Identity, Signature>,
     ) -> Result<(MessageHash, SignedMessage<Identity, Signature>), String> {
         // validate message signature
-        if !message.verify::<Hasher>() {
+        if !message.verify::<Sha256>() {
             return Err("fail to validate message".to_string());
         }
 

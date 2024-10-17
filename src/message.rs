@@ -2,25 +2,14 @@
 
 use crate::{
     account::{Identity, Secret},
-    core::message::{Message, MessageHash, MessageHasher, MessageSignature},
+    core::message::{Message, MessageSignature},
 };
 
-use sha2::{Digest, Sha256};
+use sha2::Sha256;
 
 use serde::{Deserialize, Serialize};
 
 type SchnorrSignature = schnorr_rs::Signature<schnorr_rs::SchnorrP256Group>;
-
-/// Hasher is a wrapper around sha2::Sha256, which implements the trait [MessageHasher](crate::core::message::MessageHasher).
-pub struct Hasher;
-
-impl MessageHasher for Hasher {
-    fn hash<T: AsRef<[u8]>>(value: T) -> MessageHash {
-        let mut hasher = Sha256::new();
-        hasher.update(value);
-        hasher.finalize().try_into().unwrap()
-    }
-}
 
 /// Signature is a wrapper around schnorr_rs::ec::Signature, which implements the trait [MessageSignature](crate::core::message::MessageSignature).
 #[derive(Clone, Serialize, Deserialize)]
@@ -63,7 +52,7 @@ impl crate::core::message::MessageSigner<Identity, Secret, Signature> for Messag
             &mut rand::thread_rng(),
             private_key,
             public_key,
-            message.to_hash::<Hasher>(),
+            message.to_hash::<Sha256>(),
         );
         Signature::new(signature)
     }

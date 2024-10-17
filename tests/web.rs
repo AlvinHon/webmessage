@@ -1,8 +1,9 @@
+use sha2::Sha256;
 use wasm_bindgen_test::*;
 use webmessage::{
     account::{GenKeysAlgorithm, Identity, Secret},
     groups, initAccount,
-    message::{Hasher, MessageSigner, Signature},
+    message::{MessageSigner, Signature},
     messages, signMessage, validateMessages, GenerateKeys, Group, SignedMessage,
 };
 
@@ -125,7 +126,7 @@ fn test_add_message() {
             other_id.clone(),
             &other_secret,
             "other data 2".as_bytes().to_vec(),
-            msg1.hash::<Hasher>(),
+            msg1.hash::<Sha256>(),
             msg1.clone(),
         );
 
@@ -160,7 +161,7 @@ fn test_sign_and_then_add_other_message() {
     let msg_str = signMessage("group1", "some data");
     let signed_msg: SignedMessage<Identity, Signature> =
         serde_json::from_str(&msg_str).expect("it should parse the signed message");
-    assert!(signed_msg.verify::<Hasher>());
+    assert!(signed_msg.verify::<Sha256>());
 
     // create a new identity for signing a message
     let other_msg = {
@@ -169,13 +170,13 @@ fn test_sign_and_then_add_other_message() {
             other_id.clone(),
             &other_secret,
             "other data".as_bytes().to_vec(),
-            signed_msg.hash::<Hasher>(),
+            signed_msg.hash::<Sha256>(),
             signed_msg.clone(),
         )
     };
-    assert!(other_msg.verify::<Hasher>());
+    assert!(other_msg.verify::<Sha256>());
 
-    assert!(signed_msg.is_valid_parent_of::<Hasher>(&other_msg));
+    assert!(signed_msg.is_valid_parent_of::<Sha256>(&other_msg));
 
     // add the signed message from the other identity
     webmessage::addSignedMessage("group1", &serde_json::to_string(&other_msg).unwrap())
@@ -202,7 +203,7 @@ fn test_add_other_message_and_then_sign() {
             "other data".as_bytes().to_vec(),
         )
     };
-    assert!(other_msg.verify::<Hasher>());
+    assert!(other_msg.verify::<Sha256>());
 
     // add the signed message from the other identity
     webmessage::addSignedMessage("group1", &serde_json::to_string(&other_msg).unwrap())
@@ -212,7 +213,7 @@ fn test_add_other_message_and_then_sign() {
     let msg_str = signMessage("group1", "some data");
     let signed_msg: SignedMessage<Identity, Signature> =
         serde_json::from_str(&msg_str).expect("it should parse the signed message");
-    assert!(signed_msg.verify::<Hasher>());
+    assert!(signed_msg.verify::<Sha256>());
 
     assert!(messages("group1").len() == 2);
     assert!(groups().len() == 1);

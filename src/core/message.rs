@@ -1,6 +1,7 @@
 //! Contains the structs and traits that are used to represent messages in the system.
 
 use serde::{Deserialize, Serialize};
+use sha2::Digest;
 
 use super::account::{Identity, Secret};
 
@@ -10,11 +11,6 @@ pub type MessageHash = [u8; 32];
 /// MessageSignature is a trait that represents a signature of a message.
 pub trait MessageSignature<I: Identity>: AsRef<[u8]> {
     fn verify(&self, id: &I, message: &[u8]) -> bool;
-}
-
-/// Implements the hash function for messages.
-pub trait MessageHasher {
-    fn hash<T: AsRef<[u8]>>(value: T) -> MessageHash;
 }
 
 /// Message is a struct that represents a message.
@@ -36,8 +32,13 @@ impl Message {
     }
 
     /// Hash by hashing the previous hash and the data of the message.
-    pub fn to_hash<H: MessageHasher>(&self) -> MessageHash {
-        H::hash([self.previous_hash.to_vec(), self.data.clone()].concat())
+    pub fn to_hash<H: Digest>(&self) -> MessageHash {
+        H::new()
+            .chain_update([self.previous_hash.to_vec(), self.data.clone()].concat())
+            .finalize()
+            .as_ref()
+            .try_into()
+            .unwrap()
     }
 }
 
@@ -101,28 +102,33 @@ where
     }
 
     /// verifies if the signature of the message is valid.
-    pub fn verify<H: MessageHasher>(&self) -> bool {
+    pub fn verify<H: Digest>(&self) -> bool {
         self.signature
             .verify(&self.id, &self.message.to_hash::<H>())
     }
 
     /// hash returns the hash of the signed message.
     /// The hash is calculated by hashing the data of the message, the id, the sequence number, and the signature.
-    pub fn hash<H: MessageHasher>(&self) -> MessageHash {
-        H::hash(
-            [
-                &self.message.data,
-                self.id.as_ref(),
-                &self.seq.to_le_bytes(),
-                self.signature.as_ref(),
-            ]
-            .concat(),
-        )
+    pub fn hash<H: Digest>(&self) -> MessageHash {
+        H::new()
+            .chain_update(
+                [
+                    &self.message.data,
+                    self.id.as_ref(),
+                    &self.seq.to_le_bytes(),
+                    self.signature.as_ref(),
+                ]
+                .concat(),
+            )
+            .finalize()
+            .as_ref()
+            .try_into()
+            .unwrap()
     }
 
     /// Checks if the message is a valid parent of the other message. It checks the conditions such as
     /// the hash of the message, the sequence number, and the signature validation of other message.
-    pub fn is_valid_parent_of<H: MessageHasher>(&self, other: &Self) -> bool {
+    pub fn is_valid_parent_of<H: Digest>(&self, other: &Self) -> bool {
         self.hash::<H>() == other.message.previous_hash
             && self.seq + 1 == other.seq
             && other.verify::<H>()
