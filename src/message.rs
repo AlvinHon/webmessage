@@ -2,7 +2,7 @@
 
 use crate::{
     account::{Identity, Secret},
-    core::message::{Message, MessageSignature},
+    core::message::{Message, Verifiable},
 };
 
 use sha2::Sha256;
@@ -11,7 +11,7 @@ use serde::{Deserialize, Serialize};
 
 type SchnorrSignature = schnorr_rs::Signature<schnorr_rs::SchnorrP256Group>;
 
-/// Signature is a wrapper around schnorr_rs::ec::Signature, which implements the trait [MessageSignature](crate::core::message::MessageSignature).
+/// Signature is a wrapper around schnorr_rs::ec::Signature, which implements the trait [Verifiable](crate::core::message::Verifiable).
 #[derive(Clone, Serialize, Deserialize)]
 pub struct Signature {
     signature: String,
@@ -31,7 +31,7 @@ impl AsRef<[u8]> for Signature {
     }
 }
 
-impl MessageSignature<Identity> for Signature {
+impl Verifiable<Identity> for Signature {
     fn verify(&self, id: &Identity, message: &[u8]) -> bool {
         let signature: schnorr_rs::Signature<schnorr_rs::SchnorrP256Group> =
             serde_json::from_str(&self.signature).unwrap();

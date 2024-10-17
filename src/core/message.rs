@@ -8,8 +8,8 @@ use super::account::{Identity, Secret};
 /// MessageHash is a type alias for a 32-byte array.
 pub type MessageHash = [u8; 32];
 
-/// MessageSignature is a trait that represents a signature of a message.
-pub trait MessageSignature<I: Identity>: AsRef<[u8]> {
+/// The Verifiable is implemented on the types that can be verified, such as signature.
+pub trait Verifiable<I: Identity>: AsRef<[u8]> {
     fn verify(&self, id: &I, message: &[u8]) -> bool;
 }
 
@@ -42,13 +42,13 @@ impl Message {
     }
 }
 
-pub trait MessageSigner<I: Identity, K: Secret, S: MessageSignature<I>> {
+pub trait MessageSigner<I: Identity, K: Secret, S: Verifiable<I>> {
     fn sign(id: &I, secret: &K, message: &Message) -> S;
 }
 
 /// SignedMessage is a struct that represents a signed message.
 #[derive(Clone, Serialize, Deserialize)]
-pub struct SignedMessage<I: Identity, S: MessageSignature<I>> {
+pub struct SignedMessage<I: Identity, S: Verifiable<I>> {
     /// message to be signed.
     pub message: Message,
     /// the identity of the signer.
@@ -62,7 +62,7 @@ pub struct SignedMessage<I: Identity, S: MessageSignature<I>> {
 impl<I, S> SignedMessage<I, S>
 where
     I: Identity + AsRef<[u8]>,
-    S: MessageSignature<I>,
+    S: Verifiable<I>,
 {
     /// Creates a new first message with the given data and signs it.
     pub fn new_first_message<K: Secret, A: MessageSigner<I, K, S>>(
